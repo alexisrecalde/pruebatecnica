@@ -80,6 +80,7 @@ export interface ChatModalProps {
   setIsOpen: Function;
   userData: UserDataState;
   getChatsData: any;
+  setChatsData: Function
 }
 
 export interface ConfirmDialogProps {

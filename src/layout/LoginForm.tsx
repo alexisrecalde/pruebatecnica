@@ -3,13 +3,16 @@ import React, { useState } from 'react';
 import FormData from 'form-data';
 import Link from 'next/link';
 import { LoginData } from '../types/login';
-import { loginUser } from '../queries/users.queries';
+import { loginUser } from '../queries/users/users.queries';
 import { connect } from 'react-redux';
 import PropTypes from "prop-types";
 import { setUserData , setLoginData } from '../redux/userSlice';
 import axios from 'axios';
+import { useRouter } from 'next/dist/client/router';
+import {config} from "../queries/config.queries"
+import { LoadRemove, LoadStart } from '../components/Loading';
 
-function LoginForm({setUserData, setLoginData}) {
+function LoginForm( {setLoginData}) {
   const initialValues: LoginData = {
     email: '',
     password: ''
@@ -17,17 +20,15 @@ function LoginForm({setUserData, setLoginData}) {
 
   const [formData, setFormData] = useState<LoginData>(initialValues);
   const data = new FormData();
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
- const config = {
-  headers: {
-    'content-type': 'application/json'
-  }
-};
+ 
+
 
   const loginUser = async (data: any) => {
   try {
@@ -46,11 +47,17 @@ function LoginForm({setUserData, setLoginData}) {
     resetForm();
     data.append('email', formData.email);
     data.append('password', formData.password);
+    LoadStart()
     /* 
       TODO: 
       1. Check login
       */
     loginUser(data)
+      .then(() => {
+      LoadRemove()  
+       router.push("/chat").then(() => window.scrollTo(0, 0));
+    }).catch((e)=> console.log(e))
+
     
     /*
       2. Handle errors (if there is at least one) 

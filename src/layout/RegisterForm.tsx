@@ -4,7 +4,9 @@ import FormData from 'form-data';
 
 import { RegisterData } from '../types/register';
 import Field from '../components/Home/Field';
-import { postUser } from '../queries/users.queries';
+import { postUser } from '../queries/users/users.queries';
+import { useRouter } from 'next/dist/client/router';
+import { LoadRemove, LoadStart } from '../components/Loading';
 
 function Register() {
   const initialValues: RegisterData = {
@@ -14,6 +16,8 @@ function Register() {
     password: '',
     image: "",
   };
+
+   const router = useRouter();
 
   const [selectedImage, setSelectedImage] = useState<any | null>(null);
   const [formData, setFormData] = useState<RegisterData>(initialValues);
@@ -41,7 +45,7 @@ function Register() {
   };
 
  
-  console.log(data);
+
   
 
   const handleRegister = () => {
@@ -50,18 +54,23 @@ function Register() {
     data.append('lastName', formData.lastName);
     data.append('email', formData.email);
     data.append('password', formData.password);
- 
- 
-    
-    
+    LoadStart()
     /* 
       TODO: 
       1. Make a new user
       */
     postUser(data)
+      .then(() => {
+        LoadRemove()
+        router.push("/").then(() => window.scrollTo(0, 0));
+      })
+      .catch((e) => console.log("ha ocurrido un error, intentelo mas tarde"))
+    
+    
     
     /*
       2. Display a sucess notification (or error).
+      //si se registra con exito va hasta la pagina de login
     */
   };
 

@@ -29,7 +29,7 @@ export default function ChatTabContextMenu() {
     console.log('Closed ticket...');
     // TODO: Show closed ticket component.
   };
-
+  
   return (
     <Container>
       <Item onClick={handleShowOpenTicket}>Ver ticket abierto</Item>

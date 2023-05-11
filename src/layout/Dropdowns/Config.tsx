@@ -2,12 +2,20 @@ import { useState } from 'react';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import NewChatModal from '../../components/HomeChat/NewChatModal';
 import { DropDownProps } from '../../types/chat';
+import { deleteUser } from '../../queries/users/users.queries';
+import { useRouter } from 'next/dist/client/router';
 
 function ConfigDropdown(dropDownProps: DropDownProps) {
-  const { getChatsData, userData, isOpen } = dropDownProps;
+  const { getChatsData, userData, isOpen, setConfigOpen } = dropDownProps;
+  
+  console.log();
+const router = useRouter()
 
   const [delDialogIsOpen, setDelDialogIsOpen] = useState(false);
   const [newChatModalIsOpen, setNewChatModalIsOpen] = useState(false);
+
+ const {userId, token} = userData
+  
 
   const handleDeleteUser = () => {
     setDelDialogIsOpen(true);
@@ -15,6 +23,7 @@ function ConfigDropdown(dropDownProps: DropDownProps) {
 
   const handleNewChatModal = () => {
     setNewChatModalIsOpen(true);
+    setConfigOpen(false)
   };
 
   const handleConfirmDelete = () => {
@@ -23,6 +32,9 @@ function ConfigDropdown(dropDownProps: DropDownProps) {
       1. Get current user data 
       2. Delete user 
     */
+    
+    deleteUser(token)
+    .then(()=> router.push("./"))
   };
 
   return (

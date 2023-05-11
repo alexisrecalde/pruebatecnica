@@ -3,25 +3,40 @@ import { useState } from 'react';
 import FormData from 'form-data';
 
 import { ChatModalProps } from '../../types/chat';
+import { postNewChat } from '../../queries/users/chats/chats.queries';
+import { useAppSelector } from '../../redux/hooks';
+import { getUser, setUserData } from '../../redux/userSlice';
+import { setChatsData } from '../../redux/chatsSlice';
+import { connect } from 'react-redux';
+import { useRouter } from 'next/dist/client/router';
 
 function NewChatModal(chatModalProps: ChatModalProps) {
-  const { isOpen, setIsOpen } = chatModalProps;
+  const { isOpen, setIsOpen, setChatsData } = chatModalProps;
 
+const rounter = useRouter()
+ 
   const [selectedImage, setSelectedImage] = useState<any | null>(null);
-  const [newChatName, setNewChatName] = useState<any | null>();
+  const [newChatName, setNewChatName] = useState<string | null>();
 
   const data = new FormData();
 
+   const userData = useAppSelector(getUser);
+  const { token } = userData
+ 
   const createChat = () => {
     data.append('name', newChatName);
     data.append('image', selectedImage);
-    /*
-        TODO:
-        1. Create new chat and
-        2. Update chats queue with getChatsData to display it
-        3. Close popup with handleClose
-    */
+
+    postNewChat({data, token, setChatsData}).then(()=>rounter.reload())
+    setIsOpen(false)
+    resetForm()
   };
+
+   const resetForm = () => {
+    data.delete('name');
+   data.delete('image');
+  };
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files != null) {
@@ -70,4 +85,11 @@ function NewChatModal(chatModalProps: ChatModalProps) {
   );
 }
 
-export default NewChatModal;
+
+const mapStateToProps = (dispatch: any) => ({
+ 
+  setChatsData: (state: any) => dispatch(setChatsData(state))
+  
+})
+
+export default connect(null, mapStateToProps)(NewChatModal);

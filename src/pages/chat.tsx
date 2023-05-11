@@ -7,16 +7,21 @@ import { HiPhoneMissedCall } from 'react-icons/hi';
 import empty from '../assets/images/empty.png';
 import MyProfile from '../components/MyProfile';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { getUser } from '../redux/userSlice';
+import { getUser, setLoginData, setUserData } from '../redux/userSlice';
 import { Chat, LogoType } from '../types/chat';
-import { getChats, setIsAllowedExpand } from '../redux/chatsSlice';
+import { getChats, setChatsData, setIsAllowedExpand } from '../redux/chatsSlice';
 import ChatHeader from '../components/HomeChat/ChatHeader';
 import ConfigDropdown from '../layout/Dropdowns/Config';
 import SearchBar from '../components/SearchBar';
 import ChatTab from '../components/HomeChat/ChatTab';
 import ChatMessages from '../components/HomeChat/ChatMessages';
-
-function HomeChat() {
+import {getChatQueries, postMessage} from "../queries/users/chats/chats.queries"
+import { getUserQueries } from '../queries/users/users.queries';
+import { connect } from 'react-redux';
+import PropTypes from "prop-types";
+import { io } from "socket.io-client"
+import { NotificationFailure, NotificationSuccess } from '../components/Notifications';
+function HomeChat({setUserData, setChatsData}) {
   const chatHeaderInitialState: Chat = {
     messages: [],
     messageIdToDisplay: '',
@@ -24,46 +29,59 @@ function HomeChat() {
     name: ''
   };
 
+  const socket = io("http://localhost:8080")
+ 
   const [msgEntry, setMsgEntry] = useState<string>('');
   const [selectedChat, setSelectedChat] = useState<string>('');
   const [userChatData, setUserChatData] = useState(chatHeaderInitialState);
   const [configOpen, setConfigOpen] = useState<Boolean>(false);
 
   const ref = useRef<any>();
-
   const chats = useAppSelector(getChats);
   const dispatch = useAppDispatch();
-
+ 
   const userData = useAppSelector(getUser);
-
+  const { token , userId} = userData
+  
   const positionRef = useRef<any>();
 
   const logo = empty as unknown as LogoType;
 
   useEffect(() => {
-    /* 
-      TODO: 
-      1. Get user data 
-      2. Get chats data
-    */
+    //obtener datos de chat y user y guardarlos en el store
+   getChatQueries({token,setChatsData})
+   getUserQueries({token, setUserData})
+  
   }, []);
-
+  
   useEffect(() => {
     if (ref.current) {
       ref.current.scrollTop = ref.current.scrollHeight;
       setConfigOpen((isOpen) => isOpen && chats.isAllowedExpand);
-
       // Update scroll position
       positionRef.current.scrollIntoView();
-
       /*
         TODO: 
           1. Listen the socket
           2. Get chat data
           3. Set the socket off and return void to prevent useless renders
       */
+      
+      //1. Listen the socket && 2. Get chat data
+      socket.on("chats", (params: any) => {
+        if (params.action === "SentNewMessage") {
+          getChatQueries({ token, setChatsData })
+            .then(() => NotificationSuccess((`Recibiste un mje de ${params.userId} mensaje: ${msgEntry}`)))
+            .catch(()=>  NotificationFailure("Ocurrio un error, intentelo mas tarde"))   
+        }
+      })      
+      // 3. Set the socket off and return void to prevent useless renders
+      return () => {
+        socket.off("chats",(params) => console.log(params.action) )
+      }
     }
   }, [chats]);
+
 
   const handleMsgEntry = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMsgEntry(e.target.value);
@@ -71,15 +89,24 @@ function HomeChat() {
 
   const handleSendMsg = () => {
     if (msgEntry !== '') {
-      setMsgEntry('');
       /*
         TODO:
         1. Send message
       */
+      postMessage(msgEntry, selectedChat, token)
+
+      socket.emit("chats", {
+        action: 'SentNewMessage',
+        userId: userId,
+        chatId: selectedChat
+      })
+
+      setMsgEntry('');
     } else {
       /* TODO: 
         1. Show error notification
       */
+      NotificationFailure("Ocurrio un error, intentelo mas tarde")
     }
   };
 
@@ -101,7 +128,9 @@ function HomeChat() {
     /* TODO: 
       Get all chats data 
     */
+    
   };
+  
 
   return (
     <div className="main-wrapper-chat d-flex row flex-grow-1 w-85" data-aos="zoom-in">
@@ -120,15 +149,14 @@ function HomeChat() {
             >
               <IoMdSettings aria-label="Boton de Configuracion" />
             </span>
-            <ConfigDropdown isOpen={configOpen} userData={userData} getChatsData={getChatsData} />
+            <ConfigDropdown isOpen={configOpen} setConfigOpen={setConfigOpen} userData={userData} getChatsData={getChatsData} />
           </div>
         </div>
-
         <SearchBar userId={userData.userId} chatId={selectedChat} />
 
         <div className="chatsDiv d-flex flex-grow-1 flex-column" ref={ref}>
           <div ref={positionRef} />
-          {chats && chats.chats.length > 0 ? (
+          {chats && chats.chats?.length > 0 ? (
             chats.chats.map((tab: any, i: any) => (
               <ChatTab
                 key={i}
@@ -197,4 +225,16 @@ function HomeChat() {
     </div>
   );
 }
-export default HomeChat;
+
+HomeChat.propTypes = {
+  setUserData: PropTypes.func.isRequired,
+  setLoginData: PropTypes.func.isRequired,
+};
+
+const mapStateToProps = (dispatch: any) => ({
+  setUserData: (state: any) => dispatch(setUserData(state)),
+  setChatsData: (state: any) => dispatch(setChatsData(state))
+  
+})
+
+export default connect(null, mapStateToProps)(HomeChat);

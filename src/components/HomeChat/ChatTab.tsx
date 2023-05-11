@@ -7,6 +7,9 @@ import { ChatTabProps } from '../../types/chat';
 import ConfirmDialog from '../ConfirmDialog';
 import ContextMenu from '../ContextMenu';
 import ChatTabContextMenu from './ChatTabContextMenu';
+import { deleteChat } from '../../queries/users/chats/chats.queries';
+import { useAppSelector } from '../../redux/hooks';
+import { getUser } from '../../redux/userSlice';
 
 const Container = styled.div<{ isSelected: boolean }>`
   display: flex;
@@ -104,11 +107,17 @@ function ChatTab(chatTabProps: ChatTabProps) {
     : 'No hay mensajes.';
   const lastMessageTime = messages[0] ? messages.slice(-1)[0].timeDate.slice(11, 16) + ' p.m.' : '';
 
+  const userData = useAppSelector(getUser);
+
+  const {token} = userData
+  
   const eraseChat = () => {
     /* 
       TODO: 
       1. Delete chat
     */
+    deleteChat(selectedChat, token)
+    
   };
 
   const handleOpenModal = () => {
