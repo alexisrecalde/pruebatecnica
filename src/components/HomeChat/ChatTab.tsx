@@ -10,6 +10,8 @@ import ChatTabContextMenu from './ChatTabContextMenu';
 import { deleteChat } from '../../queries/users/chats/chats.queries';
 import { useAppSelector } from '../../redux/hooks';
 import { getUser } from '../../redux/userSlice';
+import {getChats} from "../../redux/chatsSlice"
+import { NotificationSuccess } from '../Notifications';
 
 const Container = styled.div<{ isSelected: boolean }>`
   display: flex;
@@ -101,14 +103,17 @@ function ChatTab(chatTabProps: ChatTabProps) {
   const { name, image: photo, chatId, messages, selectedChat, onClick } = chatTabProps;
 
   const [isOpen, setIsOpen] = useState(false);
-
+  
   const lastMessage = messages[0]
     ? messages.slice(-1)[0].message.slice(0, 55) + '...'
     : 'No hay mensajes.';
   const lastMessageTime = messages[0] ? messages.slice(-1)[0].timeDate.slice(11, 16) + ' p.m.' : '';
 
   const userData = useAppSelector(getUser);
+  const chatData = useAppSelector(getChats);
 
+  const nameChaSelected = chatData.chats.filter((item) => item.chatId === selectedChat);
+  
   const {token} = userData
   
   const eraseChat = () => {
@@ -116,7 +121,7 @@ function ChatTab(chatTabProps: ChatTabProps) {
       TODO: 
       1. Delete chat
     */
-    deleteChat(selectedChat, token)
+    deleteChat(selectedChat, token).then(()=> NotificationSuccess(`Se elimino el mensaje de ${nameChaSelected[0].name}`))
     
   };
 
