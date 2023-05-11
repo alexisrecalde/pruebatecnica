@@ -112,3 +112,7 @@ export interface TicketData {
   priority: TicketPriority;
   status: TicketStatus;
 }
+
+export interface PasswordErrorProps {
+  mgeErrorLogin: string
+}

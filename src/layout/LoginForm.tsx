@@ -11,6 +11,7 @@ import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
 import {config} from "../queries/config.queries"
 import { LoadRemove, LoadStart } from '../components/Loading';
+import ErrorPassword from '../components/ErrorPassword/ErrorPassword';
 
 function LoginForm( {setLoginData}) {
   const initialValues: LoginData = {
@@ -19,6 +20,9 @@ function LoginForm( {setLoginData}) {
   };
 
   const [formData, setFormData] = useState<LoginData>(initialValues);
+  const [passwordError, setPasswordError] = useState<boolean>(false)
+  const [mgeErrorLogin, setMgeErrorLogin] = useState<string>("")
+
   const data = new FormData();
   const router = useRouter();
 
@@ -31,16 +35,12 @@ function LoginForm( {setLoginData}) {
 
 
   const loginUser = async (data: any) => {
-  try {
     const url = `http://localhost:8080/login`;
 
     const body = data;
 
     const res = await axios.post(url, body, config);
-    setLoginData(res.data)
-  } catch (error) {
-    console.log(error);
-  }
+    setLoginData(res.data)  
 };
 
   const handleLogin = () => {
@@ -56,7 +56,11 @@ function LoginForm( {setLoginData}) {
       .then(() => {
       LoadRemove()  
        router.push("/chat").then(() => window.scrollTo(0, 0));
-    }).catch((e)=> console.log(e))
+      }).catch((e) => {
+        LoadRemove()
+        setPasswordError(true)
+        setMgeErrorLogin(e.response.data.message)
+      })
 
     
     /*
@@ -95,6 +99,7 @@ function LoginForm( {setLoginData}) {
           Ingresar
         </button>
       </div>
+      {passwordError && <ErrorPassword mgeErrorLogin={mgeErrorLogin} />}
 
       <div className="content text d-flex flex-row gap-2 mb-5 fs-6 fst-italic" data-aos="fade">
         <span>No tienes una cuenta?</span>
